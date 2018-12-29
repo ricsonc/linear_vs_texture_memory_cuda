@@ -6,7 +6,9 @@ set(CMAKE_CXX_COMPILER "/usr/bin/g++-5")
 set(CMAKE_CXX_STANDARD 14)
 
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall")
-set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -gencode=arch=compute_50")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -O3")
+set(CMAKE_CUDA_FLAGS "-arch=sm_61 -O3")
 
 add_executable(memorytest main.cpp main.cu)
+set_property(TARGET memorytest PROPERTY CUDA_STANDARD 14)
+

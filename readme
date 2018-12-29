@@ -1,0 +1,58 @@
+This tests the memory performance of NVIDIA GPUs using both "linear memory" and cudaArray backed "texture references". Textures are supposed to deal better with common memory access patterns, however, it is unclear whether more modern GPUs still benefit from this.
+
+Methodology: I copy data from some source (either linear or texture) to some destination (always linear, since texture memory is read only), doing some arithmetic along the way. 
+
+In the 1D case, out[i] = in[i] + in[i+1] + in[i+2] + in[i+3]
+In the 2D case, out[i,j] = in[i,j] + in[i+1,j] + in[i,j+1] + in[i+1,j+1]
+In the 3D case, out[i,j,k] = in[i,j,k] + in[i+1,j,k] + in[i,j+1,k] + in[i,j,k+1]
+
+In the 1D case, the texture is backed by linear memory, since the size of a 1D cudaArray/texture seems to be capped at some very low value.
+
+For all cases, I allocated 10^8 items. I used 64 threads and 65536 blocks, except for 3D, where I used 32768 blocks, since 65536 isn't a perfect cube.
+
+I tested types char, uint16_t, float, float2, and float4 -- 1, 2, 4, 8, and 16 bytes. I did not include the time taken to allocate memory or bind memory to texture references. I measured 100 iterations of each workload and averaged. I compiled for sm_61 (Pascal architecture), and tested on a 1080ti.
+
+Results:
+
+For type char:
+linear 1D: 3.0 ms
+texture 1D: 1.5 ms
+linear 2D: 1.2 ms
+texture 2D: 0.6 ms
+linear 2D: 2.7 ms
+texture 3D: 1.3 ms
+
+For type uint16_t:
+linear 1D: 3.3 ms
+texture 1D: 1.4 ms
+linear 2D: 1.8 ms
+texture 2D: 0.9 ms
+linear 2D: 3.4 ms
+texture 3D: 1.6 ms
+
+For type float:
+linear 1D: 4.0 ms
+texture 1D: 1.6 ms
+linear 2D: 2.8 ms
+texture 2D: 1.4 ms
+linear 2D: 3.7 ms
+texture 3D: 1.9 ms
+
+For type float2:
+linear 1D: 6.1 ms
+texture 1D: 2.7 ms
+linear 2D: 4.0 ms
+texture 2D: 2.0 ms
+linear 2D: 4.3 ms
+texture 3D: 2.0 ms
+
+For type float4:
+linear 1D: 10.8 ms
+texture 1D: 4.9 ms
+linear 2D: 5.2 ms
+texture 2D: 2.9 ms
+linear 2D: 5.8 ms
+texture 3D: 2.3 ms
+
+Note that accessing and adding 4 float4's each with 16 bytes 10^8 times in 2.3 ms is about 2800 GB/s, handily exceeding the global memory bandwidth of 484 GB/s.
+

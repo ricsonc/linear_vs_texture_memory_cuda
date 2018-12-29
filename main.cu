@@ -186,15 +186,16 @@ __global__ void touch2Dtexture(void* outPtr_, long M){
 
 void time2Dtexture()
 {
-    void* refPtr;
-    void* outPtr;
     long M = 10000;
     dim3 blocks(256, 256);
     dim3 threads(8,8);
 
-    cudaMalloc(&refPtr, M*M);
+    void* outPtr;
     cudaMalloc(&outPtr, M*M);
-    gpuCheck( cudaBindTexture(NULL, texref2, refPtr, M*M) );
+
+    cudaArray *refPtr;
+    gpuCheck( cudaMallocArray(&refPtr, &texref2.channelDesc, M, M) );
+    gpuCheck( cudaBindTextureToArray(texref2, refPtr) );
     
     auto start = std::chrono::system_clock::now();
     for(int i = 0; i < 10; i++){
@@ -208,7 +209,7 @@ void time2Dtexture()
     std::chrono::duration<double> delta = end-start;
 
     gpuCheck( cudaUnbindTexture(texref) );    
-    gpuCheck( cudaFree(refPtr) );
+    gpuCheck( cudaFreeArray(refPtr) );
     gpuCheck( cudaFree(outPtr) );
     
     printf("texture 2D: %f ms\n", 1000*delta.count());
@@ -296,15 +297,16 @@ __global__ void touch3Dtexture(void* outPtr_, long M){
 
 void time3Dtexture()
 {
-    void* refPtr;
-    void* outPtr;
-    long M = 465;
+    unsigned long M = 465;
     dim3 blocks(32,32,32);
     dim3 threads(4,4,4);
 
-    cudaMalloc(&refPtr, M*M*M);
+    void* outPtr;
     cudaMalloc(&outPtr, M*M*M);
-    gpuCheck( cudaBindTexture(NULL, texref3, refPtr, M*M*M) );
+    
+    cudaArray* refPtr;
+    gpuCheck( cudaMalloc3DArray(&refPtr, &texref2.channelDesc, {M, M, M}) );
+    gpuCheck( cudaBindTextureToArray(texref3, refPtr) );
     
     auto start = std::chrono::system_clock::now();
     for(int i = 0; i < 10; i++){
@@ -318,7 +320,7 @@ void time3Dtexture()
     std::chrono::duration<double> delta = end-start;
 
     gpuCheck( cudaUnbindTexture(texref) );    
-    gpuCheck( cudaFree(refPtr) );
+    gpuCheck( cudaFreeArray(refPtr) );
     gpuCheck( cudaFree(outPtr) );
     
     printf("texture 3D: %f ms\n", 1000*delta.count());
